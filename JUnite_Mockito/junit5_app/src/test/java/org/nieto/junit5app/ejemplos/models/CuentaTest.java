@@ -2,9 +2,13 @@ package org.nieto.junit5app.ejemplos.models;
 
 import org.nieto.junit5app.ejemplos.exceptions.DineroInsuficienteException;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.*;
 
 
 import java.math.BigDecimal;
+
+import java.util.Map;
+import java.util.Properties;
 
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -130,6 +134,136 @@ class CuentaTest {
         String actual = exception.getMessage();
         String esperado = "Dinero Insuficiente";
         assertEquals(esperado, actual);
+    }
+
+    @Test
+    @Tag("cuenta")
+    @Tag("banco")
+   // @Disabled
+    @DisplayName("probando relaciones entre las cuentas y el banco con assertAll.")
+    void testRelacionBancoCuentas() {
+        //fail();
+        Cuenta cuenta1 = new Cuenta("Jhon Doe", new BigDecimal("2500"));
+        Cuenta cuenta2 = new Cuenta("Andres", new BigDecimal("1500.8989"));
+
+        Banco banco = new Banco();
+        banco.addCuenta(cuenta1);
+        banco.addCuenta(cuenta2);
+
+        banco.setNombre("Banco del Estado");
+        banco.transferir(cuenta2, cuenta1, new BigDecimal(500));
+        assertAll(() -> assertEquals("1000.8989", cuenta2.getSaldo().toPlainString(),
+                                    () -> "el valor del saldo de la cuenta2 no es el esperado."),
+                () -> assertEquals("3000", cuenta1.getSaldo().toPlainString(),
+                        () -> "el valor del saldo de la cuenta1 no es el esperado."),
+                () -> assertEquals(2, banco.getCuentas().size(), () -> "el banco no tienes las cuentas esperadas"),
+                () -> assertEquals("Banco del Estado", cuenta1.getBanco().getNombre()),
+                () -> assertEquals("Andres", banco.getCuentas().stream()
+                            .filter(c -> c.getPersona().equals("Andres"))
+                            .findFirst()
+                            .get().getPersona()),
+                () -> assertTrue(banco.getCuentas().stream()
+                            .anyMatch(c -> c.getPersona().equals("Jhon Doe"))));
+    }
+
+    @Nested
+    class SistemaOperativoTest {
+        @Test
+        @EnabledOnOs(OS.WINDOWS)
+        void testSoloWindows() {
+        }
+
+        @Test
+        @EnabledOnOs({OS.LINUX, OS.MAC})
+        void testSoloLinuxMac() {
+        }
+
+        @Test
+        @DisabledOnOs(OS.WINDOWS)
+        void testNoWindows() {
+        }
+    }
+
+    @Nested
+    class JavaVersionTest {
+        @Test
+        @EnabledOnJre(JRE.JAVA_8)
+        void soloJdk8() {
+        }
+
+        @Test
+        @EnabledOnJre(JRE.JAVA_15)
+        void soloJDK15() {
+        }
+
+        @Test
+        @DisabledOnJre(JRE.JAVA_15)
+        void testNoJDK15() {
+        }
+    }
+
+    @Nested
+    class SistemPropertiesTest{
+        @Test
+        void imprimirSystemProperties() {
+            Properties properties = System.getProperties();
+            properties.forEach((k, v)-> System.out.println(k + ":" + v));
+        }
+
+        @Test
+        @EnabledIfSystemProperty(named = "java.version", matches = ".*15.*")
+        void testJavaVersion() {
+        }
+
+        @Test
+        @DisabledIfSystemProperty(named = "os.arch", matches = ".*32.*")
+        void testSolo64() {
+        }
+
+        @Test
+        @EnabledIfSystemProperty(named = "os.arch", matches = ".*32.*")
+        void testNO64() {
+        }
+
+        @Test
+        @EnabledIfSystemProperty(named = "user.name", matches = "aguzm")
+        void testUsername() {
+        }
+
+        @Test
+        @EnabledIfSystemProperty(named = "ENV", matches = "dev")
+        void testDev() {
+        }
+    }
+
+    @Nested
+    class VariableAmbienteTest{
+        @Test
+        void imprimirVariablesAmbiente() {
+            Map<String, String> getenv = System.getenv();
+            getenv.forEach((k, v)-> System.out.println(k + " = " + v));
+        }
+
+        @Test
+        @EnabledIfEnvironmentVariable(named = "JAVA_HOME", matches = ".*jdk-15.0.1.*")
+        void testJavaHome() {
+        }
+
+        @Test
+        @EnabledIfEnvironmentVariable(named = "NUMBER_OF_PROCESSORS", matches = "8")
+        void testProcesadores() {
+        }
+
+        @Test
+        @EnabledIfEnvironmentVariable(named = "ENVIRONMENT", matches = "dev")
+        void testEnv() {
+        }
+
+        @Test
+        @DisabledIfEnvironmentVariable(named = "ENVIRONMENT", matches = "prod")
+        void testEnvProdDisabled() {
+        }
+
     }
 
     
